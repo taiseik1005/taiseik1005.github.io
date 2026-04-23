@@ -1,0 +1,635 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MBS Tokyo Shibuya — Store Dashboard · Mar–Apr 2026</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Syne:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#0a0a0f;--bg2:#13131a;--bg3:#1c1c26;--bg4:#242430;
+  --border:rgba(255,255,255,0.07);--border2:rgba(255,255,255,0.13);
+  --text:#f0f0f5;--text2:#9090a8;--text3:#5a5a72;
+  --blue:#0086d6;--blue-dim:rgba(0,134,214,0.13);
+  --red:#e24b4a;--red-dim:rgba(226,75,74,0.12);
+  --amber:#d4850a;--amber-dim:rgba(212,133,10,0.12);
+  --green:#3a9e5f;--green-dim:rgba(58,158,95,0.12);
+  --font:'Syne',sans-serif;--mono:'DM Mono',monospace;
+}
+body{background:var(--bg);color:var(--text);font-family:var(--font);min-height:100vh}
+body::before{content:'';position:fixed;inset:0;background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E");pointer-events:none;z-index:0;opacity:.7}
+.wrap{max-width:1320px;margin:0 auto;padding:0 2rem 4rem;position:relative;z-index:1}
+
+.hdr{padding:2.5rem 0 2rem;border-bottom:1px solid var(--border);margin-bottom:2rem;display:flex;align-items:flex-end;justify-content:space-between;gap:1rem;flex-wrap:wrap}
+.hdr-l{display:flex;flex-direction:column;gap:5px}
+.store-tag{font-size:10px;letter-spacing:.22em;text-transform:uppercase;color:var(--blue);font-weight:500}
+.store-name{font-size:2.4rem;font-weight:700;line-height:1}
+.store-meta{font-size:12px;color:var(--text2);margin-top:3px}
+.hdr-r{display:flex;flex-direction:column;align-items:flex-end;gap:6px}
+.badge{display:inline-flex;align-items:center;gap:6px;padding:4px 11px;border-radius:4px;font-size:10px;font-weight:600;letter-spacing:.08em;text-transform:uppercase}
+.b-warn{background:var(--amber-dim);color:var(--amber);border:1px solid rgba(212,133,10,.25)}
+.b-danger{background:var(--red-dim);color:var(--red);border:1px solid rgba(226,75,74,.25)}
+.dot{width:5px;height:5px;border-radius:50%;display:inline-block;background:currentColor}
+
+.tabs{display:flex;gap:4px;margin-bottom:1.5rem;border-bottom:1px solid var(--border);padding-bottom:0;flex-wrap:wrap}
+.tab{padding:8px 16px;font-size:12px;font-weight:500;color:var(--text3);cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-1px;transition:color .2s,border-color .2s;background:none;border-top:none;border-left:none;border-right:none;font-family:var(--font)}
+.tab:hover{color:var(--text2)}.tab.active{color:var(--blue);border-bottom-color:var(--blue)}
+.tab-panel{display:none}.tab-panel.active{display:block}
+
+.slabel{font-size:10px;letter-spacing:.18em;text-transform:uppercase;color:var(--text3);font-weight:500;margin:2rem 0 1rem;display:flex;align-items:center;gap:10px}
+.slabel::after{content:'';flex:1;height:1px;background:var(--border)}
+
+.kpi-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(145px,1fr));gap:10px}
+.kpi{background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:1rem 1.1rem;transition:border-color .2s}
+.kpi:hover{border-color:var(--border2)}
+.kpi.ab{border-top:2px solid var(--blue)}.kpi.ar{border-top:2px solid var(--red)}.kpi.aa{border-top:2px solid var(--amber)}.kpi.ag{border-top:2px solid var(--green)}
+.kpi-lbl{font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--text3);margin-bottom:7px;font-weight:500}
+.kpi-val{font-family:var(--mono);font-size:1.65rem;font-weight:500;line-height:1;color:var(--text)}
+.kpi-val.blue{color:var(--blue)}.kpi-val.red{color:var(--red)}.kpi-val.amber{color:var(--amber)}.kpi-val.green{color:var(--green)}
+.kpi-sub{font-size:11px;color:var(--text3);margin-top:5px;line-height:1.4}
+.kpi-sub.warn{color:var(--amber)}.kpi-sub.bad{color:var(--red)}.kpi-sub.ok{color:var(--green)}
+
+.bbar{background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:1.3rem 1.5rem}
+.bbar-hdr{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:12px;flex-wrap:wrap;gap:8px}
+.bbar-title{font-size:13px;color:var(--text2)}
+.bbar-vals{display:flex;gap:20px;font-family:var(--mono);font-size:12px;flex-wrap:wrap}
+.bbar-vals span{color:var(--text3)}.bbar-vals strong{color:var(--text)}
+.bar-track{background:var(--bg4);border-radius:3px;height:8px;position:relative;overflow:visible;margin-bottom:8px}
+.bar-fill{height:100%;border-radius:3px}
+.bar-footer{display:flex;justify-content:space-between;font-size:10px;color:var(--text3);font-family:var(--mono)}
+
+.cc{background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:1.2rem 1.4rem}
+.cc.full{grid-column:1/-1}
+.cc-title{font-size:13px;font-weight:600;color:var(--text);margin-bottom:3px}
+.cc-sub{font-size:11px;color:var(--text3);margin-bottom:14px;line-height:1.5}
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.legend{display:flex;flex-wrap:wrap;gap:14px;margin-bottom:12px;font-size:11px;color:var(--text2)}
+.legend span{display:flex;align-items:center;gap:5px}
+.lsq{width:10px;height:10px;border-radius:2px;flex-shrink:0}
+
+.mom-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(155px,1fr));gap:10px}
+.mom-card{background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:1rem 1.1rem}
+.mom-lbl{font-size:10px;text-transform:uppercase;letter-spacing:.1em;color:var(--text3);margin-bottom:6px;font-weight:500}
+.mom-row{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:3px}
+.mom-month{font-size:11px;color:var(--text3);font-family:var(--mono)}
+.mom-num{font-size:14px;font-weight:500;font-family:var(--mono);color:var(--text)}
+.mom-delta{font-size:11px;font-family:var(--mono);margin-top:6px;padding:3px 7px;border-radius:3px;display:inline-block}
+.delta-bad{background:var(--red-dim);color:var(--red)}.delta-good{background:var(--green-dim);color:var(--green)}
+
+.ig{display:grid;grid-template-columns:repeat(auto-fit,minmax(255px,1fr));gap:10px}
+.ic{border-radius:8px;padding:1rem 1.1rem;border:1px solid transparent}
+.ic.danger{background:var(--red-dim);border-color:rgba(226,75,74,.2)}
+.ic.warn{background:var(--amber-dim);border-color:rgba(212,133,10,.2)}
+.ic.ok{background:var(--green-dim);border-color:rgba(58,158,95,.2)}
+.ic.info{background:var(--blue-dim);border-color:rgba(0,134,214,.2)}
+.ic-tag{font-size:10px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;margin-bottom:7px}
+.ic-tag.r{color:var(--red)}.ic-tag.a{color:var(--amber)}.ic-tag.g{color:var(--green)}.ic-tag.b{color:var(--blue)}
+.ic-val{font-family:var(--mono);font-size:1.45rem;font-weight:500;margin-bottom:5px;line-height:1}
+.ic-text{font-size:12px;color:var(--text2);line-height:1.6}
+
+.table-wrap{overflow-x:auto}
+table.dt{width:100%;border-collapse:collapse;font-size:12px;font-family:var(--mono)}
+table.dt thead th{font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--text3);padding:8px 10px;border-bottom:1px solid var(--border);text-align:right;font-weight:500;white-space:nowrap}
+table.dt thead th:first-child,table.dt thead th:nth-child(2){text-align:left}
+table.dt tbody td{padding:6px 10px;border-bottom:1px solid var(--border);color:var(--text);text-align:right}
+table.dt tbody td:first-child,table.dt tbody td:nth-child(2){text-align:left;color:var(--text2)}
+table.dt tbody tr:hover td{background:var(--bg3)}
+table.dt tbody tr.hl td{background:rgba(0,134,214,.07)}
+table.dt tbody tr.fl td{background:rgba(226,75,74,.06)}
+table.dt tbody tr.mhdr td{background:var(--bg3);color:var(--text2);font-size:11px;letter-spacing:.06em;font-weight:600}
+table.dt tfoot td{padding:7px 10px;border-top:2px solid var(--border2);text-align:right;font-weight:600;color:var(--text)}
+table.dt tfoot td:first-child,table.dt tfoot td:nth-child(2){text-align:left}
+.pill{display:inline-block;padding:2px 6px;border-radius:3px;font-size:10px;font-weight:600}
+.pr{background:var(--red-dim);color:var(--red)}.pg{background:var(--green-dim);color:var(--green)}
+.pa{background:var(--amber-dim);color:var(--amber)}.pb{background:var(--blue-dim);color:var(--blue)}
+.pn{background:var(--bg4);color:var(--text3)}
+
+table.sens{width:100%;border-collapse:collapse;font-size:12px;font-family:var(--mono)}
+table.sens th{padding:8px 9px;font-size:10px;text-transform:uppercase;letter-spacing:.1em;color:var(--text3);border-bottom:1px solid var(--border);text-align:right;font-weight:500}
+table.sens th:first-child{text-align:left}
+table.sens td{padding:6px 9px;border-bottom:1px solid var(--border);text-align:right;color:var(--text2)}
+table.sens td:first-child{text-align:left;color:var(--text3)}
+table.sens td.hit{color:var(--green);font-weight:600}
+table.sens td.close{color:var(--amber)}
+table.sens td.far{color:var(--red)}
+table.sens td.curr{color:var(--blue);font-weight:600}
+table.sens tr.cur-row td{background:rgba(0,134,214,.06)}
+table.sens tr.tgt-row td{background:rgba(58,158,95,.07)}
+
+.footer{margin-top:3rem;padding-top:1.5rem;border-top:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;font-size:11px;color:var(--text3);flex-wrap:wrap;gap:8px}
+.footer strong{color:var(--text2)}
+
+@keyframes fadeUp{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)}}
+.kpi{animation:fadeUp .45s ease both}
+.kpi:nth-child(1){animation-delay:.04s}.kpi:nth-child(2){animation-delay:.08s}.kpi:nth-child(3){animation-delay:.12s}
+.kpi:nth-child(4){animation-delay:.16s}.kpi:nth-child(5){animation-delay:.2s}.kpi:nth-child(6){animation-delay:.24s}
+.kpi:nth-child(7){animation-delay:.28s}.kpi:nth-child(8){animation-delay:.32s}
+@media(max-width:768px){.g2{grid-template-columns:1fr}.store-name{font-size:1.7rem}}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<div class="hdr">
+  <div class="hdr-l">
+    <div class="store-tag">Millet Brand Store · Performance Dashboard</div>
+    <div class="store-name">MBS Tokyo Shibuya</div>
+    <div class="store-meta">Cat Street, Harajuku–Shibuya &nbsp;·&nbsp; March 7 – April 22, 2026 &nbsp;·&nbsp; Source: Power BI export</div>
+  </div>
+  <div class="hdr-r">
+    <div class="badge b-warn"><span class="dot"></span>Traffic Critical</div>
+    <div class="badge b-danger"><span class="dot"></span>Apr 13 Data Anomaly</div>
+    <div style="font-size:11px;color:var(--text3);text-align:right;margin-top:3px;">Annual Budget: ¥140M</div>
+  </div>
+</div>
+
+<div class="tabs">
+  <button class="tab active" onclick="switchTab('overview',this)">Overview</button>
+  <button class="tab" onclick="switchTab('monthly',this)">Mar vs Apr</button>
+  <button class="tab" onclick="switchTab('daily',this)">Daily Charts</button>
+  <button class="tab" onclick="switchTab('sensitivity',this)">Gap Analysis</button>
+  <button class="tab" onclick="switchTab('data',this)">Data Table</button>
+</div>
+
+<!-- OVERVIEW -->
+<div class="tab-panel active" id="tab-overview">
+  <div class="slabel">Period KPIs — March 7 to April 22, 2026</div>
+  <div class="kpi-grid">
+    <div class="kpi ab"><div class="kpi-lbl">Total Sales ACT</div><div class="kpi-val blue">¥11.87M</div><div class="kpi-sub">Mar + Apr combined</div></div>
+    <div class="kpi aa"><div class="kpi-lbl">Daily Avg Sales</div><div class="kpi-val amber">¥270K</div><div class="kpi-sub warn">Need ¥383K/day → ¥140M</div></div>
+    <div class="kpi ar"><div class="kpi-lbl">Total Traffic</div><div class="kpi-val red">6,543</div><div class="kpi-sub bad">~149/day avg</div></div>
+    <div class="kpi aa"><div class="kpi-lbl">Blended CVR%</div><div class="kpi-val amber">9.0%</div><div class="kpi-sub">589 transactions</div></div>
+    <div class="kpi ag"><div class="kpi-lbl">Blended ATV</div><div class="kpi-val green">¥20,151</div><div class="kpi-sub ok">Strong — driven by Mar</div></div>
+    <div class="kpi"><div class="kpi-lbl">UPT</div><div class="kpi-val">1.50</div><div class="kpi-sub">units per transaction</div></div>
+    <div class="kpi"><div class="kpi-lbl">Total Units</div><div class="kpi-val">884</div><div class="kpi-sub">QTY sold</div></div>
+    <div class="kpi ar"><div class="kpi-lbl">Annual Run-rate</div><div class="kpi-val red">~¥98M</div><div class="kpi-sub bad">¥42M below ¥140M budget</div></div>
+  </div>
+
+  <div class="slabel">Budget Pace</div>
+  <div class="bbar">
+    <div class="bbar-hdr">
+      <div class="bbar-title">Annual run-rate vs ¥140M budget</div>
+      <div class="bbar-vals">
+        <div><span>Run-rate: </span><strong style="color:var(--amber)">~¥98M</strong></div>
+        <div><span>Budget: </span><strong>¥140M</strong></div>
+        <div><span>Gap: </span><strong style="color:var(--red)">−¥42M</strong></div>
+      </div>
+    </div>
+    <div class="bar-track">
+      <div class="bar-fill" style="width:70%;background:var(--amber)"></div>
+      <div style="position:absolute;top:-7px;left:100%;height:22px;width:2px;background:var(--text3)">
+        <div style="position:absolute;top:-18px;right:3px;font-size:9px;color:var(--text3);font-family:var(--mono);white-space:nowrap">¥140M</div>
+      </div>
+    </div>
+    <div class="bar-footer">
+      <span style="color:var(--amber)">¥98M run-rate · 70% of ¥140M budget</span>
+      <span>Need +¥42M additional revenue to hit budget</span>
+    </div>
+  </div>
+
+  <div class="slabel">Month-on-Month Summary</div>
+  <div class="mom-grid">
+    <div class="mom-card">
+      <div class="mom-lbl">Sales ACT</div>
+      <div class="mom-row"><span class="mom-month">March (25d)</span><span class="mom-num">¥7.24M</span></div>
+      <div class="mom-row"><span class="mom-month">April (22d)</span><span class="mom-num">¥4.62M</span></div>
+      <div class="mom-delta delta-bad">▼ −36.2% MoM</div>
+    </div>
+    <div class="mom-card">
+      <div class="mom-lbl">Traffic</div>
+      <div class="mom-row"><span class="mom-month">March</span><span class="mom-num">3,913</span></div>
+      <div class="mom-row"><span class="mom-month">April</span><span class="mom-num">2,630</span></div>
+      <div class="mom-delta delta-bad">▼ −32.8% MoM</div>
+    </div>
+    <div class="mom-card">
+      <div class="mom-lbl">Daily Traffic avg</div>
+      <div class="mom-row"><span class="mom-month">March</span><span class="mom-num">178/day</span></div>
+      <div class="mom-row"><span class="mom-month">April</span><span class="mom-num">120/day</span></div>
+      <div class="mom-delta delta-bad">▼ −33% MoM</div>
+    </div>
+    <div class="mom-card">
+      <div class="mom-lbl">CVR%</div>
+      <div class="mom-row"><span class="mom-month">March</span><span class="mom-num">8.3%</span></div>
+      <div class="mom-row"><span class="mom-month">April</span><span class="mom-num">10.0%</span></div>
+      <div class="mom-delta delta-good">▲ +1.7pp MoM</div>
+    </div>
+    <div class="mom-card">
+      <div class="mom-lbl">ATV</div>
+      <div class="mom-row"><span class="mom-month">March</span><span class="mom-num">¥22,221</span></div>
+      <div class="mom-row"><span class="mom-month">April</span><span class="mom-num">¥17,584</span></div>
+      <div class="mom-delta delta-bad">▼ −20.9% MoM</div>
+    </div>
+    <div class="mom-card">
+      <div class="mom-lbl">UPT</div>
+      <div class="mom-row"><span class="mom-month">March</span><span class="mom-num">1.58</span></div>
+      <div class="mom-row"><span class="mom-month">April</span><span class="mom-num">1.40</span></div>
+      <div class="mom-delta delta-bad">▼ −11.4% MoM</div>
+    </div>
+  </div>
+
+  <div class="slabel">Key Business Findings</div>
+  <div class="ig">
+    <div class="ic danger">
+      <div class="ic-tag r">Traffic — critical constraint</div>
+      <div class="ic-val" style="color:var(--red)">149/day avg</div>
+      <div class="ic-text">Average daily traffic is 149 — well below the ~211/day needed to hit ¥140M at current blended CVR (9%) and ATV (¥20,151). March averaged 178/day; April dropped to 120/day — a worsening trend heading into the season.</div>
+    </div>
+    <div class="ic danger">
+      <div class="ic-tag r">Significant April decline</div>
+      <div class="ic-val" style="color:var(--red)">−36% sales MoM</div>
+      <div class="ic-text">April sales fell 36% vs March despite CVR improving +1.7pp. The drivers: traffic dropped 33% and ATV fell 21%. Both traffic and basket size are moving in the wrong direction simultaneously.</div>
+    </div>
+    <div class="ic ok">
+      <div class="ic-tag g">CVR is improving</div>
+      <div class="ic-val" style="color:var(--green)">8.3% → 10.0%</div>
+      <div class="ic-text">Conversion improved month-on-month — the store is getting better at converting whoever walks in. In-store execution is working. The problem is purely upstream: not enough foot traffic reaching the door.</div>
+    </div>
+    <div class="ic warn">
+      <div class="ic-tag a">ATV erosion — watch closely</div>
+      <div class="ic-val" style="color:var(--amber)">¥22K → ¥17.6K</div>
+      <div class="ic-text">ATV dropped ¥4,637 (−21%) month-on-month. Monitor basket composition — are customers trading down, or was March's strong ATV driven by a few high-value purchases? Both interpretations have different responses.</div>
+    </div>
+    <div class="ic danger">
+      <div class="ic-tag r">Apr 13 — data error</div>
+      <div class="ic-val" style="color:var(--red)">QTY −6,477</div>
+      <div class="ic-text">April 13 shows negative quantity (−6,477) and UPT −498 alongside ¥175K in sales. This is a system entry error or large return that must be investigated and corrected before any formal KPI reporting.</div>
+    </div>
+    <div class="ic warn">
+      <div class="ic-tag a">Mar 7 — event outlier</div>
+      <div class="ic-val" style="color:var(--amber)">¥1.24M single day</div>
+      <div class="ic-text">March 7 generated ¥1.24M (17% of March revenue) with 471 traffic and 91 units. Almost certainly a group/corporate event. Stripping this, March's underlying daily run-rate is ~¥249K — still below the ¥383K target pace.</div>
+    </div>
+  </div>
+</div>
+
+<!-- MONTHLY -->
+<div class="tab-panel" id="tab-monthly">
+  <div class="slabel">March vs April — Daily Sales</div>
+  <div class="g2">
+    <div class="cc">
+      <div class="cc-title">Daily Sales ACT — March 2026</div>
+      <div class="cc-sub">25 operating days · Total ¥7.24M · Mar 7 = ¥1.24M event day</div>
+      <div style="position:relative;width:100%;height:220px"><canvas id="marSalesChart" role="img" aria-label="March sales">March daily sales.</canvas></div>
+    </div>
+    <div class="cc">
+      <div class="cc-title">Daily Sales ACT — April 2026</div>
+      <div class="cc-sub">22 operating days · Total ¥4.62M · Apr 11 noted</div>
+      <div style="position:relative;width:100%;height:220px"><canvas id="aprSalesChart" role="img" aria-label="April sales">April daily sales.</canvas></div>
+    </div>
+  </div>
+  <div class="g2" style="margin-top:12px">
+    <div class="cc">
+      <div class="cc-title">Daily Traffic — March</div>
+      <div class="cc-sub">178/day avg · Wide daily variance</div>
+      <div style="position:relative;width:100%;height:180px"><canvas id="marTChart" role="img" aria-label="March traffic">March traffic.</canvas></div>
+    </div>
+    <div class="cc">
+      <div class="cc-title">Daily Traffic — April</div>
+      <div class="cc-sub">120/day avg · Consistently lower than March</div>
+      <div style="position:relative;width:100%;height:180px"><canvas id="aprTChart" role="img" aria-label="April traffic">April traffic.</canvas></div>
+    </div>
+  </div>
+  <div class="slabel">KPI Comparison (per-day normalised)</div>
+  <div class="cc" style="margin-top:0">
+    <div class="cc-title">March vs April — Key Metrics Per Day</div>
+    <div class="cc-sub">Normalised to per-day to account for different number of operating days</div>
+    <div class="legend">
+      <span><span class="lsq" style="background:#3a9e5f"></span>March</span>
+      <span><span class="lsq" style="background:#0086d6"></span>April</span>
+    </div>
+    <div style="position:relative;width:100%;height:220px"><canvas id="momChart" role="img" aria-label="MoM KPI comparison">Month-on-month KPI bar chart.</canvas></div>
+  </div>
+</div>
+
+<!-- DAILY CHARTS -->
+<div class="tab-panel" id="tab-daily">
+  <div class="slabel">Full Period — Sales &amp; Traffic</div>
+  <div class="cc">
+    <div class="cc-title">Daily Sales ACT + Traffic — March 7 to April 22</div>
+    <div class="cc-sub">Green bars = March · Blue bars = April · Red line = Traffic · Blue dot = outlier event · Red = anomaly</div>
+    <div class="legend">
+      <span><span class="lsq" style="background:#3a9e5f"></span>Sales — March</span>
+      <span><span class="lsq" style="background:#0086d6"></span>Sales — April</span>
+      <span><span class="lsq" style="background:#e24b4a"></span>Traffic (line)</span>
+    </div>
+    <div style="position:relative;width:100%;height:280px"><canvas id="fullSalesChart" role="img" aria-label="Full period sales and traffic">Full period combined chart.</canvas></div>
+  </div>
+  <div class="g2" style="margin-top:12px">
+    <div class="cc">
+      <div class="cc-title">CVR% — Full Period</div>
+      <div class="cc-sub">Green ≥ 13% · Amber 8–13% · Red &lt; 8%</div>
+      <div style="position:relative;width:100%;height:210px"><canvas id="cvrChart" role="img" aria-label="CVR full period">CVR chart.</canvas></div>
+    </div>
+    <div class="cc">
+      <div class="cc-title">ATV — Full Period (¥)</div>
+      <div class="cc-sub">Mar avg ¥22,221 (green) · Apr avg ¥17,584 (blue)</div>
+      <div style="position:relative;width:100%;height:210px"><canvas id="atvChart" role="img" aria-label="ATV full period">ATV chart.</canvas></div>
+    </div>
+  </div>
+  <div class="g2" style="margin-top:12px">
+    <div class="cc">
+      <div class="cc-title">Traffic vs Sales Scatter (excl. outliers)</div>
+      <div class="cc-sub">Positive correlation visible · Green = March · Blue = April</div>
+      <div style="position:relative;width:100%;height:220px"><canvas id="scatterChart" role="img" aria-label="Scatter chart">Scatter chart traffic vs sales.</canvas></div>
+    </div>
+    <div class="cc">
+      <div class="cc-title">UPT — Full Period (excl. anomalies)</div>
+      <div class="cc-sub">Units per transaction · Apr 11 &amp; Apr 13 excluded</div>
+      <div style="position:relative;width:100%;height:220px"><canvas id="uptChart" role="img" aria-label="UPT full period">UPT chart.</canvas></div>
+    </div>
+  </div>
+</div>
+
+<!-- SENSITIVITY -->
+<div class="tab-panel" id="tab-sensitivity">
+  <div class="slabel">¥140M Gap Analysis</div>
+  <div class="cc" style="margin-bottom:12px">
+    <div class="cc-title">Annual Revenue at Different Daily Traffic Levels</div>
+    <div class="cc-sub">CVR = 9.0% (blended actual) · ATV = ¥20,151 (blended actual) · Green = ¥140M threshold · Blue bar = current position</div>
+    <div style="position:relative;width:100%;height:240px"><canvas id="gapChart" role="img" aria-label="Gap analysis chart">Revenue gap chart.</canvas></div>
+    <div style="font-size:11px;color:var(--text3);margin-top:10px;font-family:var(--mono)">
+      Current: 149/day → ¥98M annualised &nbsp;|&nbsp; ¥140M requires: ~211/day &nbsp;|&nbsp; Gap to close: +62 visitors/day (+42%)
+    </div>
+  </div>
+  <div class="cc" style="margin-bottom:12px">
+    <div class="cc-title">Sensitivity Matrix — Annual Revenue (¥M) · Traffic × CVR</div>
+    <div class="cc-sub" style="margin-bottom:16px">ATV fixed at ¥20,151 (blended) &nbsp;·&nbsp; <span style="color:var(--green)">Green ≥ ¥140M</span> &nbsp;·&nbsp; <span style="color:var(--amber)">Amber ¥100–139M</span> &nbsp;·&nbsp; <span style="color:var(--red)">Red &lt; ¥100M</span> &nbsp;·&nbsp; <span style="color:var(--blue)">Blue = current</span></div>
+    <div class="table-wrap"><table class="sens" id="sensTable"></table></div>
+  </div>
+  <div class="slabel">What needs to change to hit ¥140M?</div>
+  <div class="ig">
+    <div class="ic info">
+      <div class="ic-tag b">Scenario A — Traffic only</div>
+      <div class="ic-val" style="color:var(--blue)">149 → 211/day</div>
+      <div class="ic-text">Grow daily traffic by +62 visitors (+42%) while holding CVR and ATV flat. Requires sustained investment in awareness, SNS geo-tagging, Cat Street presence, and event programming.</div>
+    </div>
+    <div class="ic info">
+      <div class="ic-tag b">Scenario B — CVR uplift only</div>
+      <div class="ic-val" style="color:var(--blue)">9% → 12.8%</div>
+      <div class="ic-text">Hold traffic at 149/day and raise CVR from 9% to 12.8% (+3.8pp). Requires significant in-store improvements — clienteling, visual merchandising, staff training, or product mix restructuring.</div>
+    </div>
+    <div class="ic info">
+      <div class="ic-tag b">Scenario C — ATV uplift only</div>
+      <div class="ic-val" style="color:var(--blue)">¥20K → ¥28.3K</div>
+      <div class="ic-text">Hold traffic and CVR flat, grow ATV by 41%. Very difficult without a deliberate premium product push, bundle strategy, or significant change in the product assortment mix.</div>
+    </div>
+    <div class="ic ok">
+      <div class="ic-tag g">Scenario D — Balanced (recommended)</div>
+      <div class="ic-val" style="color:var(--green)">+20% each lever</div>
+      <div class="ic-text">Traffic 149→179, CVR 9%→10.8%, ATV ¥20K→¥24K. A balanced 20% uplift across all three levers generates ~¥144M — exceeding budget. The most resilient and realistic path to ¥140M.</div>
+    </div>
+  </div>
+</div>
+
+<!-- DATA TABLE -->
+<div class="tab-panel" id="tab-data">
+  <div class="slabel">Full Daily Data — March 7 to April 22, 2026</div>
+  <div class="cc">
+    <div class="cc-title">Raw Data Export</div>
+    <div class="cc-sub" style="margin-bottom:14px">Blue highlight = event day (Mar 7) · Red highlight = data anomaly (Apr 13) · Source: Power BI</div>
+    <div class="table-wrap">
+      <table class="dt">
+        <thead><tr><th>Mo</th><th>Date</th><th>Traffic</th><th>TXN</th><th>CVR%</th><th>ATV ¥</th><th>UPT</th><th>QTY</th><th>Sales ACT ¥</th><th>Flag</th></tr></thead>
+        <tbody id="tableBody"></tbody>
+        <tfoot><tr><td colspan="2">TOTAL</td><td>6,543</td><td>589</td><td>9.0%</td><td>¥20,151</td><td>1.50</td><td>884</td><td>¥11,868,836</td><td></td></tr></tfoot>
+      </table>
+    </div>
+  </div>
+</div>
+
+<div class="footer">
+  <div>MBS Tokyo Shibuya · Cat Street, Harajuku–Shibuya · <strong>Millet Brand Store</strong></div>
+  <div>Source: Power BI Export · March 7 – April 22, 2026 · <strong>Annual Budget: ¥140M</strong></div>
+  <div>Dashboard generated April 2026</div>
+</div>
+</div>
+
+<script>
+const marData=[
+  {d:'3/7', t:471,txn:48,cvr:10.19,atv:25839,upt:1.90,qty:91, s:1240288,flag:'event'},
+  {d:'3/8', t:264,txn:24,cvr:9.09, atv:18651,upt:1.33,qty:32, s:447630},
+  {d:'3/9', t:151,txn:15,cvr:9.93, atv:33279,upt:2.13,qty:32, s:499185},
+  {d:'3/10',t:109,txn:4, cvr:3.67, atv:17261,upt:1.00,qty:4,  s:69045},
+  {d:'3/11',t:147,txn:13,cvr:8.84, atv:12732,upt:1.69,qty:22, s:165510},
+  {d:'3/12',t:121,txn:9, cvr:7.44, atv:17281,upt:1.44,qty:13, s:155530},
+  {d:'3/13',t:100,txn:16,cvr:16.00,atv:15486,upt:1.06,qty:17, s:247780},
+  {d:'3/14',t:289,txn:17,cvr:5.88, atv:20559,upt:1.41,qty:24, s:349505},
+  {d:'3/15',t:266,txn:24,cvr:9.02, atv:25050,upt:1.83,qty:44, s:601205},
+  {d:'3/16',t:110,txn:10,cvr:9.09, atv:12321,upt:1.20,qty:12, s:123210},
+  {d:'3/17',t:82, txn:7, cvr:8.54, atv:24940,upt:1.57,qty:11, s:174580},
+  {d:'3/18',t:97, txn:10,cvr:10.31,atv:22014,upt:1.70,qty:17, s:220135},
+  {d:'3/19',t:101,txn:5, cvr:4.95, atv:14000,upt:1.00,qty:5,  s:70000},
+  {d:'3/20',t:175,txn:19,cvr:10.86,atv:19983,upt:1.21,qty:23, s:379675},
+  {d:'3/21',t:222,txn:12,cvr:5.41, atv:22763,upt:1.25,qty:15, s:273150},
+  {d:'3/22',t:248,txn:22,cvr:8.87, atv:17835,upt:1.36,qty:30, s:392370},
+  {d:'3/23',t:65, txn:6, cvr:9.23, atv:33098,upt:2.17,qty:13, s:198590},
+  {d:'3/24',t:82, txn:4, cvr:4.88, atv:10444,upt:1.50,qty:6,  s:41775},
+  {d:'3/25',t:80, txn:7, cvr:8.75, atv:53000,upt:3.14,qty:22, s:371000},
+  {d:'3/26',t:69, txn:6, cvr:8.70, atv:23615,upt:1.33,qty:8,  s:141690},
+  {d:'3/27',t:100,txn:9, cvr:9.00, atv:19459,upt:1.11,qty:10, s:175135},
+  {d:'3/28',t:209,txn:11,cvr:5.26, atv:20085,upt:1.55,qty:17, s:220930},
+  {d:'3/29',t:188,txn:14,cvr:7.45, atv:19461,upt:1.50,qty:21, s:272447},
+  {d:'3/30',t:100,txn:9, cvr:9.00, atv:41215,upt:2.33,qty:21, s:370935},
+  {d:'3/31',t:67, txn:5, cvr:7.46, atv:8575, upt:1.20,qty:6,  s:42875},
+];
+const aprData=[
+  {d:'4/1', t:54, txn:4, cvr:7.41, atv:12411,upt:1.75,  qty:7,    s:49645},
+  {d:'4/2', t:91, txn:8, cvr:8.79, atv:15768,upt:2.38,  qty:19,   s:126145},
+  {d:'4/3', t:110,txn:8, cvr:7.27, atv:14256,upt:1.38,  qty:11,   s:114045},
+  {d:'4/4', t:184,txn:21,cvr:11.41,atv:18088,upt:1.33,  qty:28,   s:379840},
+  {d:'4/5', t:218,txn:15,cvr:6.88, atv:23338,upt:1.27,  qty:19,   s:350075},
+  {d:'4/6', t:84, txn:9, cvr:10.71,atv:20010,upt:1.11,  qty:10,   s:180090},
+  {d:'4/7', t:69, txn:8, cvr:11.59,atv:15456,upt:1.13,  qty:9,    s:123645},
+  {d:'4/8', t:106,txn:5, cvr:4.72, atv:40484,upt:2.00,  qty:10,   s:202420},
+  {d:'4/9', t:113,txn:11,cvr:9.73, atv:18842,upt:1.36,  qty:15,   s:207258},
+  {d:'4/10',t:81, txn:9, cvr:11.11,atv:17204,upt:1.89,  qty:17,   s:154835},
+  {d:'4/11',t:238,txn:26,cvr:10.92,atv:28258,upt:251.46,qty:6538, s:734696,flag:'outlier'},
+  {d:'4/12',t:188,txn:18,cvr:9.57, atv:15823,upt:1.56,  qty:28,   s:284820},
+  {d:'4/13',t:77, txn:13,cvr:16.88,atv:13505,upt:-498.2,qty:-6477,s:175570,flag:'anomaly'},
+  {d:'4/14',t:70, txn:10,cvr:14.29,atv:12710,upt:1.20,  qty:12,   s:127100},
+  {d:'4/15',t:92, txn:10,cvr:10.87,atv:13515,upt:1.10,  qty:11,   s:135145},
+  {d:'4/16',t:77, txn:9, cvr:11.69,atv:10465,upt:1.56,  qty:14,   s:94185},
+  {d:'4/17',t:99, txn:13,cvr:13.13,atv:14145,upt:1.31,  qty:17,   s:183880},
+  {d:'4/18',t:190,txn:27,cvr:14.21,atv:17745,upt:1.26,  qty:34,   s:479105},
+  {d:'4/19',t:192,txn:14,cvr:7.29, atv:12688,upt:1.21,  qty:17,   s:177625},
+  {d:'4/20',t:93, txn:7, cvr:7.53, atv:24006,upt:1.29,  qty:9,    s:168045},
+  {d:'4/21',t:76, txn:9, cvr:11.84,atv:6756, upt:0.56,  qty:5,    s:60800},
+  {d:'4/22',t:128,txn:9, cvr:7.03, atv:12855,upt:1.67,  qty:15,   s:115692},
+];
+
+const allData=[...marData.map(r=>({...r,mo:'Mar'})),...aprData.map(r=>({...r,mo:'Apr'}))];
+const TT={backgroundColor:'#13131a',borderColor:'#333',borderWidth:1,titleColor:'#9090a8',bodyColor:'#f0f0f5'};
+const xT={color:'#5a5a72',font:{size:9},autoSkip:true,maxRotation:45};
+const xTA={color:'#5a5a72',font:{size:9},autoSkip:false,maxRotation:45};
+const yT={color:'#5a5a72',font:{size:10}};
+const grd={color:'rgba(255,255,255,0.04)'};
+const NL={legend:{display:false},tooltip:TT};
+
+function switchTab(id,el){
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  document.querySelectorAll('.tab-panel').forEach(p=>p.classList.remove('active'));
+  el.classList.add('active');
+  document.getElementById('tab-'+id).classList.add('active');
+  setTimeout(()=>window.dispatchEvent(new Event('resize')),60);
+}
+
+// DATA TABLE
+const tbody=document.getElementById('tableBody');
+let lastMo='';
+allData.forEach(r=>{
+  if(r.mo!==lastMo){
+    lastMo=r.mo;
+    const info=r.mo==='Mar'?'March 2026 · 25 days · ¥7,244,175':'April 2026 · 22 days · ¥4,624,661';
+    tbody.innerHTML+=`<tr class="mhdr"><td>${r.mo==='Mar'?'March 2026':'April 2026'}</td><td colspan="9" style="font-size:10px;color:var(--text3);letter-spacing:.06em">${info}</td></tr>`;
+  }
+  const isEv=r.flag==='event',isOu=r.flag==='outlier',isAn=r.flag==='anomaly';
+  const cls=isEv||isOu?'hl':isAn?'fl':'';
+  const cC=r.cvr>=13?'color:var(--green)':r.cvr<8?'color:var(--red)':'color:var(--amber)';
+  const uptD=Math.abs(r.upt)>10?'<span class="pill pr">ERR</span>':r.upt.toFixed(2);
+  const qtyD=r.qty<0?`<span class="pill pr">${r.qty.toLocaleString()}</span>`:r.qty.toLocaleString();
+  let flag='<span class="pill pn">Normal</span>';
+  if(isEv||isOu) flag='<span class="pill pb">Event</span>';
+  else if(isAn) flag='<span class="pill pr">Anomaly</span>';
+  else if(r.s>400000) flag='<span class="pill pg">Strong</span>';
+  else if(r.s<70000) flag='<span class="pill pa">Low</span>';
+  tbody.innerHTML+=`<tr class="${cls}"><td>${r.mo}</td><td>${r.d}</td><td>${r.t}</td><td>${r.txn}</td><td style="${cC}">${r.cvr.toFixed(1)}%</td><td>¥${r.atv.toLocaleString()}</td><td>${uptD}</td><td>${qtyD}</td><td>¥${r.s.toLocaleString()}</td><td>${flag}</td></tr>`;
+});
+
+// SENSITIVITY TABLE
+const sT=[100,130,149,170,200,211,250,300,400];
+const sC=[6,7,8,9,10,11,12,13,14];
+const ATV=20151,D=365,B=140;
+let sh='<thead><tr><th>Traffic/day</th>';
+sC.forEach(c=>{sh+=`<th>CVR ${c}%</th>`;});
+sh+='</tr></thead><tbody>';
+sT.forEach(t=>{
+  const isCur=t===149,isTgt=t===211;
+  sh+=`<tr class="${isCur?'cur-row':isTgt?'tgt-row':''}"><td style="${isCur?'color:var(--blue);font-weight:600':isTgt?'color:var(--green);font-weight:600':''}">${t}/day${isTgt?' ✓':''}</td>`;
+  sC.forEach(c=>{
+    const rev=Math.round(t*(c/100)*ATV*D/1000000);
+    const isCurCell=t===149&&c===9;
+    sh+=`<td class="${isCurCell?'curr':rev>=B?'hit':rev>=100?'close':'far'}">¥${rev}M</td>`;
+  });
+  sh+='</tr>';
+});
+sh+='</tbody>';
+document.getElementById('sensTable').innerHTML=sh;
+
+// GAP CHART
+const tSc=[80,100,120,149,170,200,211,250,300,400];
+const ann=tSc.map(t=>Math.round(t*0.09*ATV*D/1000000));
+new Chart(document.getElementById('gapChart'),{
+  type:'bar',
+  data:{labels:tSc.map(t=>t+'/day'),datasets:[{data:ann,
+    backgroundColor:tSc.map((t,i)=>t===149?'#0086d6':ann[i]>=140?'#3a9e5f88':ann[i]>=100?'#d4850a88':'#e24b4a88'),
+    borderColor:tSc.map((t,i)=>t===149?'#0086d6':ann[i]>=140?'#3a9e5f':ann[i]>=100?'#d4850a':'#e24b4a'),
+    borderWidth:1}]},
+  options:{responsive:true,maintainAspectRatio:false,plugins:{...NL,tooltip:{...TT,callbacks:{label:c=>'¥'+c.raw+'M annualised'}}},
+    scales:{x:{ticks:yT,grid:{display:false}},y:{ticks:{...yT,callback:v=>'¥'+v+'M'},grid:grd,min:0}}}
+});
+
+// MARCH CHARTS
+new Chart(document.getElementById('marSalesChart'),{type:'bar',
+  data:{labels:marData.map(r=>r.d),datasets:[{data:marData.map(r=>r.s),
+    backgroundColor:marData.map(r=>r.flag==='event'?'#0086d6':r.s>300000?'#3a9e5f88':'#3a9e5f44'),
+    borderColor:marData.map(r=>r.flag==='event'?'#0086d6':'#3a9e5f'),borderWidth:1}]},
+  options:{responsive:true,maintainAspectRatio:false,plugins:NL,
+    scales:{x:{ticks:xT,grid:{display:false}},y:{ticks:{...yT,callback:v=>'¥'+Math.round(v/1000)+'K'},grid:grd}}}
+});
+new Chart(document.getElementById('aprSalesChart'),{type:'bar',
+  data:{labels:aprData.map(r=>r.d),datasets:[{data:aprData.map(r=>r.s),
+    backgroundColor:aprData.map(r=>r.flag==='outlier'?'#0086d6':r.flag==='anomaly'?'#e24b4a88':r.s>300000?'#0086d688':'#0086d644'),
+    borderColor:aprData.map(r=>r.flag==='outlier'?'#0086d6':r.flag==='anomaly'?'#e24b4a':'#0086d6'),borderWidth:1}]},
+  options:{responsive:true,maintainAspectRatio:false,plugins:NL,
+    scales:{x:{ticks:xT,grid:{display:false}},y:{ticks:{...yT,callback:v=>'¥'+Math.round(v/1000)+'K'},grid:grd}}}
+});
+new Chart(document.getElementById('marTChart'),{type:'bar',
+  data:{labels:marData.map(r=>r.d),datasets:[{data:marData.map(r=>r.t),backgroundColor:'#3a9e5f55',borderColor:'#3a9e5f',borderWidth:1}]},
+  options:{responsive:true,maintainAspectRatio:false,plugins:NL,scales:{x:{ticks:xT,grid:{display:false}},y:{ticks:yT,grid:grd}}}
+});
+new Chart(document.getElementById('aprTChart'),{type:'bar',
+  data:{labels:aprData.map(r=>r.d),datasets:[{data:aprData.map(r=>r.t),backgroundColor:'#0086d644',borderColor:'#0086d6',borderWidth:1}]},
+  options:{responsive:true,maintainAspectRatio:false,plugins:NL,scales:{x:{ticks:xT,grid:{display:false}},y:{ticks:yT,grid:grd}}}
+});
+
+// MOM CHART
+new Chart(document.getElementById('momChart'),{type:'bar',
+  data:{
+    labels:['Sales/day (¥K)','Traffic/day','CVR%','ATV (¥K)','UPT'],
+    datasets:[
+      {label:'March',data:[Math.round(7244175/25/1000),Math.round(3913/25),8.3,Math.round(22221/1000),1.58],backgroundColor:'#3a9e5f88',borderColor:'#3a9e5f',borderWidth:1},
+      {label:'April', data:[Math.round(4624661/22/1000),Math.round(2630/22),10.0,Math.round(17584/1000),1.40],backgroundColor:'#0086d655',borderColor:'#0086d6',borderWidth:1}
+    ]
+  },
+  options:{responsive:true,maintainAspectRatio:false,
+    plugins:{legend:{display:true,labels:{color:'#9090a8',font:{size:11},boxWidth:12,boxHeight:12}},tooltip:TT},
+    scales:{x:{ticks:yT,grid:{display:false}},y:{ticks:yT,grid:grd}}}
+});
+
+// FULL PERIOD SALES+TRAFFIC
+new Chart(document.getElementById('fullSalesChart'),{
+  data:{
+    labels:allData.map(r=>r.d),
+    datasets:[
+      {type:'bar',data:allData.map(r=>r.s),
+        backgroundColor:allData.map(r=>r.flag==='event'||r.flag==='outlier'?'#0086d6':r.flag==='anomaly'?'#e24b4a88':r.mo==='Mar'?'#3a9e5f55':'#0086d644'),
+        borderColor:allData.map(r=>r.flag==='event'||r.flag==='outlier'?'#0086d6':r.flag==='anomaly'?'#e24b4a':r.mo==='Mar'?'#3a9e5f':'#0086d6'),
+        borderWidth:1,yAxisID:'y',order:2},
+      {type:'line',data:allData.map(r=>r.t),borderColor:'#e24b4a',backgroundColor:'transparent',yAxisID:'y2',tension:0.3,pointRadius:2,borderWidth:1.5,order:1}
+    ]
+  },
+  options:{responsive:true,maintainAspectRatio:false,interaction:{mode:'index',intersect:false},
+    plugins:{legend:{display:false},tooltip:{...TT,callbacks:{label:c=>c.datasetIndex===0?'¥'+c.raw.toLocaleString():'Traffic: '+c.raw}}},
+    scales:{
+      x:{ticks:xTA,grid:{color:'rgba(255,255,255,0.03)'}},
+      y:{ticks:{...yT,callback:v=>'¥'+Math.round(v/1000)+'K'},grid:grd},
+      y2:{position:'right',ticks:{color:'#e24b4a66',font:{size:10}},grid:{display:false}}
+    }}
+});
+
+// CVR
+new Chart(document.getElementById('cvrChart'),{type:'bar',
+  data:{labels:allData.map(r=>r.d),datasets:[{data:allData.map(r=>r.cvr),
+    backgroundColor:allData.map(r=>r.cvr>=13?'#3a9e5f88':r.cvr<8?'#e24b4a88':'#d4850a88'),
+    borderColor:allData.map(r=>r.cvr>=13?'#3a9e5f':r.cvr<8?'#e24b4a':'#d4850a'),borderWidth:1}]},
+  options:{responsive:true,maintainAspectRatio:false,plugins:NL,
+    scales:{x:{ticks:xTA,grid:{display:false}},y:{ticks:{...yT,callback:v=>v+'%'},grid:grd}}}
+});
+
+// ATV
+new Chart(document.getElementById('atvChart'),{type:'bar',
+  data:{labels:allData.map(r=>r.d),datasets:[{data:allData.map(r=>r.atv),
+    backgroundColor:allData.map(r=>r.mo==='Mar'?'#3a9e5f44':'#0086d644'),
+    borderColor:allData.map(r=>r.mo==='Mar'?'#3a9e5f':'#0086d6'),borderWidth:1}]},
+  options:{responsive:true,maintainAspectRatio:false,plugins:{...NL,tooltip:{...TT,callbacks:{label:c=>'¥'+c.raw.toLocaleString()}}},
+    scales:{x:{ticks:xTA,grid:{display:false}},y:{ticks:{...yT,callback:v=>'¥'+Math.round(v/1000)+'K'},grid:grd}}}
+});
+
+// SCATTER
+const scM=marData.filter(r=>r.d!=='3/7').map(r=>({x:r.t,y:Math.round(r.s/1000)}));
+const scA=aprData.filter(r=>!r.flag).map(r=>({x:r.t,y:Math.round(r.s/1000)}));
+new Chart(document.getElementById('scatterChart'),{type:'scatter',
+  data:{datasets:[
+    {label:'March',data:scM,backgroundColor:'#3a9e5f88',borderColor:'#3a9e5f',borderWidth:1,pointRadius:5},
+    {label:'April', data:scA,backgroundColor:'#0086d688',borderColor:'#0086d6',borderWidth:1,pointRadius:5}
+  ]},
+  options:{responsive:true,maintainAspectRatio:false,
+    plugins:{legend:{display:true,labels:{color:'#9090a8',font:{size:11},boxWidth:12,boxHeight:12}},tooltip:{...TT,callbacks:{label:c=>`Traffic: ${c.raw.x} · ¥${c.raw.y}K`}}},
+    scales:{x:{title:{display:true,text:'Daily traffic',color:'#5a5a72',font:{size:10}},ticks:yT,grid:grd,min:0},
+      y:{title:{display:true,text:'Sales (¥K)',color:'#5a5a72',font:{size:10}},ticks:{...yT,callback:v=>'¥'+v+'K'},grid:grd}}}
+});
+
+// UPT
+const uptClean=allData.map(r=>Math.abs(r.upt)>10?null:r.upt);
+new Chart(document.getElementById('uptChart'),{type:'bar',
+  data:{labels:allData.map(r=>r.d),datasets:[{data:uptClean,
+    backgroundColor:allData.map(r=>r.mo==='Mar'?'#3a9e5f44':'#0086d644'),
+    borderColor:allData.map(r=>r.mo==='Mar'?'#3a9e5f':'#0086d6'),borderWidth:1}]},
+  options:{responsive:true,maintainAspectRatio:false,plugins:NL,
+    scales:{x:{ticks:xTA,grid:{display:false}},y:{ticks:{...yT,callback:v=>v+'x'},grid:grd,min:0}}}
+});
+</script>
+</body>
+</html>
